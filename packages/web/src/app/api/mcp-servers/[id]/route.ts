@@ -1,31 +1,18 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
-import { controlPlaneFetch } from "@/lib/control-plane";
+import { proxyControlPlane, requireUser } from "@/lib/api-route";
 
 export async function GET(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const session = await getServerSession(authOptions);
-  if (!session?.user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const auth = await requireUser();
+  if (auth instanceof NextResponse) return auth;
 
   const { id } = await params;
-  try {
-    const response = await controlPlaneFetch(`/mcp-servers/${id}`);
-    const data = await response.json();
-    return NextResponse.json(data, { status: response.status });
-  } catch (error) {
-    console.error("Failed to fetch MCP server:", error);
-    return NextResponse.json({ error: "Failed to fetch MCP server" }, { status: 500 });
-  }
+  return proxyControlPlane("Failed to fetch MCP server", `/mcp-servers/${id}`);
 }
 
 export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const session = await getServerSession(authOptions);
-  if (!session?.user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const auth = await requireUser();
+  if (auth instanceof NextResponse) return auth;
 
   const { id } = await params;
   let body: unknown;
@@ -34,37 +21,21 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
   } catch {
     return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
   }
-  try {
-    const response = await controlPlaneFetch(`/mcp-servers/${id}`, {
-      method: "PUT",
-      body: JSON.stringify(body),
-    });
-    const data = await response.json();
-    return NextResponse.json(data, { status: response.status });
-  } catch (error) {
-    console.error("Failed to update MCP server:", error);
-    return NextResponse.json({ error: "Failed to update MCP server" }, { status: 500 });
-  }
+  return proxyControlPlane("Failed to update MCP server", `/mcp-servers/${id}`, {
+    method: "PUT",
+    body: JSON.stringify(body),
+  });
 }
 
 export async function DELETE(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const session = await getServerSession(authOptions);
-  if (!session?.user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const auth = await requireUser();
+  if (auth instanceof NextResponse) return auth;
 
   const { id } = await params;
-  try {
-    const response = await controlPlaneFetch(`/mcp-servers/${id}`, {
-      method: "DELETE",
-    });
-    const data = await response.json();
-    return NextResponse.json(data, { status: response.status });
-  } catch (error) {
-    console.error("Failed to delete MCP server:", error);
-    return NextResponse.json({ error: "Failed to delete MCP server" }, { status: 500 });
-  }
+  return proxyControlPlane("Failed to delete MCP server", `/mcp-servers/${id}`, {
+    method: "DELETE",
+  });
 }
