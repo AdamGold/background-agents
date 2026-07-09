@@ -69,7 +69,12 @@ export async function getOAuthToken(env: Env, orgId: string): Promise<string | n
   let tokenData: StoredTokenData;
   try {
     tokenData = JSON.parse(raw) as StoredTokenData;
-  } catch {
+  } catch (error) {
+    // Stored token is corrupt — surface it rather than silently forcing re-auth.
+    log.warn("oauth.stored_token_parse_failed", {
+      org_id: orgId,
+      error: error instanceof Error ? error : new Error(String(error)),
+    });
     return null;
   }
 

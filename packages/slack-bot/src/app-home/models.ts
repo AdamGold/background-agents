@@ -5,6 +5,9 @@ import {
 } from "@open-inspect/shared";
 import type { Env } from "../types";
 import type { ModelOption } from "./slack-types";
+import { createLogger } from "../logger";
+
+const log = createLogger("app-home:models");
 
 const ALL_MODELS = MODEL_OPTIONS.flatMap((group) =>
   group.models.map((model) => ({
@@ -44,8 +47,12 @@ export async function getAvailableModels(env: Env, traceId?: string): Promise<Mo
         }
       }
     }
-  } catch {
-    // Fall through to defaults
+  } catch (error) {
+    // Fall back to defaults, but record why the preference lookup failed.
+    log.warn("model_preferences.fetch_failed", {
+      trace_id: traceId,
+      error: error instanceof Error ? error : new Error(String(error)),
+    });
   }
 
   return getDefaultModelOptions();

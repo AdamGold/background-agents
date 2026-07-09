@@ -1267,8 +1267,13 @@ export class SessionDO extends DurableObject<Env> {
     for (const row of rows) {
       try {
         events.push(JSON.parse(row.data));
-      } catch {
-        // Skip malformed events
+      } catch (error) {
+        // Persisted event data is corrupt — surface it instead of silently
+        // dropping the event from the replay.
+        this.log.warn("Skipping malformed event during replay", {
+          eventId: row.id,
+          error: error instanceof Error ? error : new Error(String(error)),
+        });
       }
     }
 
@@ -1381,8 +1386,13 @@ export class SessionDO extends DurableObject<Env> {
     for (const event of page.events) {
       try {
         items.push(JSON.parse(event.data));
-      } catch {
-        // Skip malformed events
+      } catch (error) {
+        // Persisted event data is corrupt — surface it instead of silently
+        // dropping the event from the history page.
+        this.log.warn("Skipping malformed event in history page", {
+          eventId: event.id,
+          error: error instanceof Error ? error : new Error(String(error)),
+        });
       }
     }
 

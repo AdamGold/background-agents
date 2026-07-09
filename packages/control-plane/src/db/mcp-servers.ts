@@ -33,7 +33,10 @@ function parseRepoScopes(raw: string | null): string[] | null {
   try {
     const parsed = JSON.parse(raw);
     return Array.isArray(parsed) ? parsed : [raw];
-  } catch {
+  } catch (error) {
+    log.warn("mcp_server.repo_scope_parse_failed", {
+      error: error instanceof Error ? error : new Error(String(error)),
+    });
     return [raw];
   }
 }
@@ -42,7 +45,10 @@ function safeJsonParseCommand(raw: string | null): string[] | undefined {
   if (!raw) return undefined;
   try {
     return JSON.parse(raw);
-  } catch {
+  } catch (error) {
+    log.warn("mcp_server.command_parse_failed", {
+      error: error instanceof Error ? error : new Error(String(error)),
+    });
     return [raw];
   }
 }
@@ -50,7 +56,10 @@ function safeJsonParseCommand(raw: string | null): string[] | undefined {
 function safeJsonParseEnv(raw: string): Record<string, string> {
   try {
     return JSON.parse(raw);
-  } catch {
+  } catch (error) {
+    log.warn("mcp_server.env_parse_failed", {
+      error: error instanceof Error ? error : new Error(String(error)),
+    });
     return {};
   }
 }
