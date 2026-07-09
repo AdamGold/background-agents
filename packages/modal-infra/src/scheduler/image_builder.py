@@ -183,6 +183,7 @@ def _generate_clone_token() -> str:
                 private_key=private_key,
                 installation_id=installation_id,
             )
+        log.warn("github.token_missing")
     except Exception as e:
         log.warn("github.token_error", error=str(e))
     return ""
