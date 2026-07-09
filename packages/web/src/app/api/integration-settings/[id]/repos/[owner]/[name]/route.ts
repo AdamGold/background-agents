@@ -28,14 +28,13 @@ export async function PUT(
   if (auth instanceof NextResponse) return auth;
 
   const { id, owner, name } = await params;
-  const body = await request.json();
   return proxyControlPlane(
     "Failed to update repo integration settings",
     repoSettingsPath(id, owner, name),
-    {
+    async () => ({
       method: "PUT",
-      body: JSON.stringify(body),
-    }
+      body: JSON.stringify(await request.json()),
+    })
   );
 }
 

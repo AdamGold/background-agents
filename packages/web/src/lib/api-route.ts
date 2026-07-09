@@ -39,6 +39,14 @@ export async function requireUser(): Promise<Session | NextResponse> {
 }
 
 /**
+ * Fetch options for a proxied control plane request. Pass a function (which may
+ * be async) when the options depend on work that can throw — e.g. parsing the
+ * request body. The factory runs inside {@link proxyControlPlane}'s try/catch so
+ * a malformed body maps to the same logged 500 as any other failure.
+ */
+export type ProxyInit = RequestInit | (() => RequestInit | Promise<RequestInit>);
+
+/**
  * Proxy a request to the control plane and mirror its JSON body and status.
  *
  * On a thrown error, logs `${errorMessage}:` with the error and responds with a
@@ -47,15 +55,18 @@ export async function requireUser(): Promise<Session | NextResponse> {
  *
  * @param errorMessage Human-readable label for logs and the 500 error body.
  * @param path         Control plane path (e.g. "/automations/123").
- * @param init         Optional fetch options (method, body, headers).
+ * @param init         Optional fetch options, or a factory producing them.
  */
 export async function proxyControlPlane(
   errorMessage: string,
   path: string,
-  init?: RequestInit
+  init?: ProxyInit
 ): Promise<NextResponse> {
   try {
-    const response = init ? await controlPlaneFetch(path, init) : await controlPlaneFetch(path);
+    const resolvedInit = typeof init === "function" ? await init() : init;
+    const response = resolvedInit
+      ? await controlPlaneFetch(path, resolvedInit)
+      : await controlPlaneFetch(path);
     const data = await response.json();
     return NextResponse.json(data, { status: response.status });
   } catch (error) {

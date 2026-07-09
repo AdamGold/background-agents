@@ -15,14 +15,13 @@ export async function POST(request: NextRequest) {
   const auth = await requireUser();
   if (auth instanceof NextResponse) return auth;
 
-  const body = await request.json();
   const user = auth.user;
   const userId = user.id || user.email || "anonymous";
 
-  return proxyControlPlane("Failed to create automation", "/automations", {
+  return proxyControlPlane("Failed to create automation", "/automations", async () => ({
     method: "POST",
     body: JSON.stringify({
-      ...body,
+      ...(await request.json()),
       userId,
       scmUserId: user.id,
       scmLogin: user.login,
@@ -30,5 +29,5 @@ export async function POST(request: NextRequest) {
       scmEmail: user.email,
       scmAvatarUrl: user.image,
     }),
-  });
+  }));
 }

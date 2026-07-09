@@ -7,9 +7,15 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   if (auth instanceof NextResponse) return auth;
 
   const { id } = await params;
-  const body = await request.text();
-  return proxyControlPlane("Failed to regenerate key", `/automations/${id}/regenerate-key`, {
-    method: "POST",
-    ...(body ? { headers: { "Content-Type": "application/json" }, body } : {}),
-  });
+  return proxyControlPlane(
+    "Failed to regenerate key",
+    `/automations/${id}/regenerate-key`,
+    async () => {
+      const body = await request.text();
+      return {
+        method: "POST",
+        ...(body ? { headers: { "Content-Type": "application/json" }, body } : {}),
+      };
+    }
+  );
 }

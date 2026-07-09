@@ -15,9 +15,8 @@ export async function POST(request: NextRequest) {
   const auth = await requireUser();
   if (auth instanceof NextResponse) return auth;
 
-  const body = await request.json();
-  return proxyControlPlane("Failed to create MCP server", "/mcp-servers", {
+  return proxyControlPlane("Failed to create MCP server", "/mcp-servers", async () => ({
     method: "POST",
-    body: JSON.stringify(body),
-  });
+    body: JSON.stringify(await request.json()),
+  }));
 }

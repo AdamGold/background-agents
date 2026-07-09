@@ -24,13 +24,12 @@ export async function PUT(
   if (auth instanceof NextResponse) return auth;
 
   const { owner, name } = await params;
-  const body = await request.json();
   return proxyControlPlane(
     "Failed to update repo secrets",
     `/repos/${encodeURIComponent(owner)}/${encodeURIComponent(name)}/secrets`,
-    {
+    async () => ({
       method: "PUT",
-      body: JSON.stringify(body),
-    }
+      body: JSON.stringify(await request.json()),
+    })
   );
 }

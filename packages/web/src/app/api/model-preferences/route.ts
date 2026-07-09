@@ -13,9 +13,12 @@ export async function PUT(request: NextRequest) {
   const auth = await requireUser();
   if (auth instanceof NextResponse) return auth;
 
-  const body = await request.json();
-  return proxyControlPlane("Failed to update model preferences", "/model-preferences", {
-    method: "PUT",
-    body: JSON.stringify(body),
-  });
+  return proxyControlPlane(
+    "Failed to update model preferences",
+    "/model-preferences",
+    async () => ({
+      method: "PUT",
+      body: JSON.stringify(await request.json()),
+    })
+  );
 }

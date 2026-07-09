@@ -15,11 +15,10 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
   if (auth instanceof NextResponse) return auth;
 
   const { id } = await params;
-  const body = await request.json();
-  return proxyControlPlane("Failed to update automation", `/automations/${id}`, {
+  return proxyControlPlane("Failed to update automation", `/automations/${id}`, async () => ({
     method: "PUT",
-    body: JSON.stringify(body),
-  });
+    body: JSON.stringify(await request.json()),
+  }));
 }
 
 export async function DELETE(

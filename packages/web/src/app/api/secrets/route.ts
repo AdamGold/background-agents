@@ -13,9 +13,8 @@ export async function PUT(request: NextRequest) {
   const auth = await requireUser();
   if (auth instanceof NextResponse) return auth;
 
-  const body = await request.json();
-  return proxyControlPlane("Failed to update global secrets", "/secrets", {
+  return proxyControlPlane("Failed to update global secrets", "/secrets", async () => ({
     method: "PUT",
-    body: JSON.stringify(body),
-  });
+    body: JSON.stringify(await request.json()),
+  }));
 }

@@ -76,6 +76,33 @@ describe("proxyControlPlane", () => {
     expect(controlPlaneFetch).toHaveBeenCalledWith("/thing", { method: "POST" });
   });
 
+  it("resolves an init factory before fetching", async () => {
+    vi.mocked(controlPlaneFetch).mockResolvedValue(Response.json({ ok: true }, { status: 200 }));
+
+    await proxyControlPlane("Failed to do thing", "/thing", async () => ({
+      method: "PUT",
+      body: JSON.stringify({ a: 1 }),
+    }));
+
+    expect(controlPlaneFetch).toHaveBeenCalledWith("/thing", {
+      method: "PUT",
+      body: JSON.stringify({ a: 1 }),
+    });
+  });
+
+  it("maps a throwing init factory to the labeled 500 without calling the control plane", async () => {
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+
+    const response = await proxyControlPlane("Failed to do thing", "/thing", () => {
+      throw new SyntaxError("bad json");
+    });
+
+    expect(controlPlaneFetch).not.toHaveBeenCalled();
+    expect(response.status).toBe(500);
+    await expect(response.json()).resolves.toEqual({ error: "Failed to do thing" });
+    errorSpy.mockRestore();
+  });
+
   it("returns a 500 with the error message when the fetch throws", async () => {
     vi.mocked(controlPlaneFetch).mockRejectedValue(new Error("boom"));
     const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
