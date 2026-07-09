@@ -1,43 +1,20 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
-import { controlPlaneFetch } from "@/lib/control-plane";
+import { proxyControlPlane, requireUser } from "@/lib/api-route";
 
 export async function GET() {
-  const session = await getServerSession(authOptions);
-  if (!session?.user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const auth = await requireUser();
+  if (auth instanceof NextResponse) return auth;
 
-  try {
-    const response = await controlPlaneFetch("/secrets");
-    const data = await response.json();
-    return NextResponse.json(data, { status: response.status });
-  } catch (error) {
-    console.error("Failed to fetch global secrets:", error);
-    return NextResponse.json({ error: "Failed to fetch global secrets" }, { status: 500 });
-  }
+  return proxyControlPlane("Failed to fetch global secrets", "/secrets");
 }
 
 export async function PUT(request: NextRequest) {
-  const session = await getServerSession(authOptions);
-  if (!session?.user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const auth = await requireUser();
+  if (auth instanceof NextResponse) return auth;
 
-  try {
-    const body = await request.json();
-
-    const response = await controlPlaneFetch("/secrets", {
-      method: "PUT",
-      body: JSON.stringify(body),
-    });
-
-    const data = await response.json();
-    return NextResponse.json(data, { status: response.status });
-  } catch (error) {
-    console.error("Failed to update global secrets:", error);
-    return NextResponse.json({ error: "Failed to update global secrets" }, { status: 500 });
-  }
+  return proxyControlPlane("Failed to update global secrets", "/secrets", async () => ({
+    method: "PUT",
+    body: JSON.stringify(await request.json()),
+  }));
 }

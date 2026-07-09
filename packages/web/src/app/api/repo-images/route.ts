@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { requireUser } from "@/lib/api-route";
 import { controlPlaneFetch } from "@/lib/control-plane";
 import { supportsRepoImages } from "@/lib/sandbox-provider";
 
@@ -12,10 +11,8 @@ export async function GET() {
     );
   }
 
-  const session = await getServerSession(authOptions);
-  if (!session?.user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const auth = await requireUser();
+  if (auth instanceof NextResponse) return auth;
 
   try {
     const [enabledResponse, statusResponse] = await Promise.all([

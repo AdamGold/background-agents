@@ -1,18 +1,14 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { requireUser } from "@/lib/api-route";
 import { controlPlaneFetch } from "@/lib/control-plane";
 
-export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  // Verify user is authenticated
-  const session = await getServerSession(authOptions);
-  if (!session?.user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+export async function POST(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const auth = await requireUser();
+  if (auth instanceof NextResponse) return auth;
 
   const { id } = await params;
-  const userId = session.user.id || session.user.email || "anonymous";
+  const userId = auth.user.id || auth.user.email || "anonymous";
 
   try {
     const response = await controlPlaneFetch(`/sessions/${id}/archive`, {
